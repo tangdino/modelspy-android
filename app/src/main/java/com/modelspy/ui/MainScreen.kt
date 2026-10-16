@@ -10,18 +10,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -33,6 +35,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import com.modelspy.data.ModelScanResult
 import com.modelspy.data.ProbeResult
 
@@ -46,24 +49,30 @@ fun MainScreen(
     progress: String,
     results: List<ModelScanResult>,
     error: String?,
+    allModels: List<String>,
+    selectedModels: List<String>,
     onEndpointChange: (String) -> Unit,
     onApiKeyChange: (String) -> Unit,
     onConcurrencyChange: (Int) -> Unit,
+    onFetchModels: () -> Unit,
+    onToggleModel: (String) -> Unit,
+    onToggleAll: () -> Unit,
     onStart: () -> Unit,
     onCancel: () -> Unit,
     onSelect: (ModelScanResult) -> Unit,
     onToggleLang: () -> Unit,
     onCheckUpdate: () -> Unit,
     updateMessage: String?,
+    onDismissUpdate: () -> Unit,
 ) {
     var showDetail by remember { mutableStateOf<ModelScanResult?>(null) }
     var showAbout by remember { mutableStateOf(false) }
-    val langTick = remember { mutableStateOf(0) }
+
     showDetail?.let { r ->
         DetailDialog(r) { showDetail = null }
         return
     }
-    langTick.value  // recompose on language change
+
     if (showAbout) {
         AlertDialog(
             onDismissRequest = { showAbout = false },
@@ -74,10 +83,10 @@ fun MainScreen(
     }
     updateMessage?.let { msg ->
         AlertDialog(
-            onDismissRequest = { },
+            onDismissRequest = onDismissUpdate,
             title = { Text(AppStrings.get("check_update")) },
             text = { Text(msg, fontSize = 13.sp) },
-            confirmButton = { TextButton(onClick = { }) { Text(AppStrings.get("ok")) } }
+            confirmButton = { TextButton(onClick = onDismissUpdate) { Text(AppStrings.get("ok")) } }
         )
     }
 
@@ -85,7 +94,7 @@ fun MainScreen(
         TopAppBar(
             title = { Text(AppStrings.get("title")) },
             actions = {
-                TextButton(onClick = { onToggleLang(); langTick.value++ }) {
+                TextButton(onClick = onToggleLang) {
                     Text(if (AppStrings.lang == "zh") "EN" else "中")
                 }
                 TextButton(onClick = { showAbout = true }) { Text(AppStrings.get("about")) }
@@ -105,18 +114,46 @@ fun MainScreen(
             }
             Slider(value = concurrency.toFloat(), onValueChange = { onConcurrencyChange(it.toInt()) },
                 valueRange = 1f..24f, steps = 22, modifier = Modifier.fillMaxWidth())
-            Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
+
+            Row(Modifier.fillMaxWidth().padding(top = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Button(onClick = onFetchModels, enabled = !running) { Text(AppStrings.get("fetch_models")) }
                 Button(onClick = onStart, enabled = !running) { Text(AppStrings.get("start")) }
-                if (running) Button(onClick = onCancel, modifier = Modifier.padding(start = 8.dp)) { Text(AppStrings.get("stop")) }
+                if (running) Button(onClick = onCancel) { Text(AppStrings.get("stop")) }
             }
+
             if (running) {
                 CircularProgressIndicator(Modifier.padding(top = 12.dp))
                 Text(progress, Modifier.padding(top = 8.dp), fontSize = 13.sp)
             }
             error?.let { Text(it, color = MaterialTheme.colorScheme.error, modifier = Modifier.padding(top = 8.dp)) }
-            LazyColumn(contentPadding = PaddingValues(top = 12.dp)) {
-                items(results) { r ->
-                    ResultCard(r) { showDetail = r }
+
+            if (allModels.isNotEmpty()) {
+                Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Text(AppStrings.get("select_all"), fontWeight = FontWeight.Bold)
+                    Text("${AppStrings.get("selected")}: ${selectedModels.size}/${allModels.size}", fontSize = 12.sp)
+                    Checkbox(
+                        checked = selectedModels.size == allModels.size && allModels.isNotEmpty(),
+                        onCheckedChange = { onToggleAll() }
+                    )
+                }
+            }
+
+            LazyColumn(contentPadding = PaddingValues(top = 8.dp)) {
+                if (allModels.isNotEmpty()) {
+                    items(allModels) { m ->
+                        Row(Modifier.fillMaxWidth().clickable { onToggleModel(m) }.padding(vertical = 2.dp)) {
+                            Checkbox(checked = m in selectedModels, onCheckedChange = { onToggleModel(m) })
+                            Text(m, Modifier.padding(start = 4.dp, top = 14.dp), fontSize = 13.sp)
+                        }
+                    }
+                    item { HorizontalDivider(Modifier.padding(vertical = 8.dp)) }
+                }
+                if (results.isEmpty()) {
+                    item { Text(AppStrings.get("no_results"), Modifier.padding(8.dp), fontSize = 13.sp) }
+                } else {
+                    items(results) { r ->
+                        ResultCard(r) { showDetail = r }
+                    }
                 }
             }
         }
@@ -143,12 +180,18 @@ fun ResultCard(r: ModelScanResult, onClick: () -> Unit) {
 
 @Composable
 fun DetailDialog(r: ModelScanResult, onDismiss: () -> Unit) {
-    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) { }
-    Column(Modifier.fillMaxSize().padding(16.dp)) {
-        Text("${r.modelParam} → ${r.detected}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-        Text("Provider ${r.provider} · Tier ${r.tier} · Score ${r.score}", fontSize = 13.sp)
-        androidx.compose.foundation.lazy.LazyColumn {
-            items(r.probes) { p -> ProbeRow(p) }
+    Dialog(onDismissRequest = onDismiss) {
+        Card(Modifier.fillMaxWidth().padding(8.dp)) {
+            Column(Modifier.padding(16.dp)) {
+                Text("${r.modelParam} → ${r.detected}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
+                Text("${AppStrings.get("detail_provider")}: ${r.provider} · " +
+                        "${AppStrings.get("detail_tier")}: ${r.tier} · " +
+                        "${AppStrings.get("detail_score")}: ${r.score}", fontSize = 13.sp)
+                LazyColumn(Modifier.fillMaxWidth()) {
+                    items(r.probes) { p -> ProbeRow(p) }
+                }
+                TextButton(onClick = onDismiss, Modifier.fillMaxWidth()) { Text(AppStrings.get("ok")) }
+            }
         }
     }
 }
@@ -158,9 +201,10 @@ fun ProbeRow(p: ProbeResult) {
     Card(Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
         Column(Modifier.padding(10.dp)) {
             Text(p.name, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-            if (p.error != null) Text("ERROR: ${p.error}", color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
+            if (p.error != null) Text("${AppStrings.get("error")}: ${p.error}", color = MaterialTheme.colorScheme.error, fontSize = 11.sp)
             else {
-                Text("延迟 ${p.latencySeconds}s · 思考 ${p.reasoningTokens ?: 0} tokens", fontSize = 11.sp)
+                Text("${AppStrings.get("latency")} ${p.latencySeconds}s · " +
+                        "${AppStrings.get("thinking")} ${p.reasoningTokens ?: 0} ${AppStrings.get("tokens")}", fontSize = 11.sp)
                 Text((p.response ?: "").take(500), fontSize = 11.sp, fontFamily = FontFamily.Monospace)
             }
         }

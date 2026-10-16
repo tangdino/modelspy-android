@@ -1,8 +1,12 @@
 package com.modelspy.ui
 
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+
 /** Bilingual UI strings. Switch with AppStrings.lang = "zh" / "en". */
 object AppStrings {
-    var lang: String = "zh"
+    var lang by mutableStateOf("zh")
 
     private val zh = mapOf(
         "title" to "API Model Spy",
@@ -11,10 +15,18 @@ object AppStrings {
         "apikey" to "API Key",
         "concurrency" to "并发数",
         "concurrency_hint" to "建议 4-8，过高会被限流",
-        "start" to "开始全量扫描",
+        "fetch_models" to "获取模型列表",
+        "fetching" to "正在获取模型...",
+        "select_all" to "全选",
+        "selected" to "已选",
+        "scan_selected" to "开始扫描",
+        "scan_all" to "开始扫描全部",
+        "start" to "开始扫描",
         "stop" to "停止",
         "scanning" to "扫描中",
         "done" to "完成",
+        "results" to "检测结果",
+        "no_results" to "暂无结果",
         "real_model" to "真实模型",
         "confidence" to "置信度",
         "candidates" to "候选",
@@ -34,6 +46,18 @@ object AppStrings {
         "about_body" to "版本 1.0\n\n通过数字分布指纹识别任意 OpenAI 兼容接口背后的真实大模型。\n\n本项目的检测方法与模型参考库基于以下开源项目构建：\nIkaleio/lm-detector (MIT)\nhttps://github.com/Ikaleio/lm-detector",
         "ok" to "确定",
         "current_version" to "当前版本",
+        "provider" to "厂商",
+        "tier" to "档次",
+        "score" to "分数",
+        "latency" to "延迟",
+        "thinking" to "思考",
+        "tokens" to "tokens",
+        "error" to "错误",
+        "no_models_loaded" to "未获取模型列表，请先点击「获取模型列表」",
+        "need_select" to "请先选择要检测的模型",
+        "detail_provider" to "厂商",
+        "detail_tier" to "档次",
+        "detail_score" to "分数",
     )
 
     private val en = mapOf(
@@ -43,10 +67,18 @@ object AppStrings {
         "apikey" to "API Key",
         "concurrency" to "Concurrency",
         "concurrency_hint" to "Keep 4-8; higher gets rate-limited",
-        "start" to "Start full scan",
+        "fetch_models" to "Fetch models",
+        "fetching" to "Fetching models...",
+        "select_all" to "Select all",
+        "selected" to "Selected",
+        "scan_selected" to "Start scan",
+        "scan_all" to "Scan all",
+        "start" to "Start",
         "stop" to "Stop",
         "scanning" to "Scanning",
         "done" to "Done",
+        "results" to "Results",
+        "no_results" to "No results yet",
         "real_model" to "Real model",
         "confidence" to "Confidence",
         "candidates" to "Candidates",
@@ -56,7 +88,7 @@ object AppStrings {
         "models" to " models",
         "language" to "Language",
         "about" to "About",
-        "check_update" to "Check for updates",
+        "check_update" to "Check updates",
         "checking" to "Checking for updates...",
         "up_to_date" to "Already up to date",
         "update_found" to "New version available",
@@ -66,6 +98,18 @@ object AppStrings {
         "about_body" to "Version 1.0\n\nIdentifies the real LLM behind any OpenAI-compatible endpoint via numeric-distribution fingerprinting.\n\nBuilt on the detection method and reference bank of:\nIkaleio/lm-detector (MIT)\nhttps://github.com/Ikaleio/lm-detector",
         "ok" to "OK",
         "current_version" to "Current version",
+        "provider" to "Provider",
+        "tier" to "Tier",
+        "score" to "Score",
+        "latency" to "Latency",
+        "thinking" to "thinking",
+        "tokens" to "tokens",
+        "error" to "Error",
+        "no_models_loaded" to "No models loaded — tap \"Fetch models\" first",
+        "need_select" to "Select at least one model first",
+        "detail_provider" to "Provider",
+        "detail_tier" to "Tier",
+        "detail_score" to "Score",
     )
 
     fun get(key: String): String = (if (lang == "zh") zh else en)[key] ?: key

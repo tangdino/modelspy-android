@@ -36,6 +36,8 @@ class MainActivity : ComponentActivity() {
     private val errorMessage = mutableStateOf<String?>(null)
     private val updateMessage = mutableStateOf<String?>(null)
     private val results = mutableStateListOf<ModelScanResult>()
+    private val allModels = mutableStateListOf<String>()
+    private val selectedModels = mutableStateListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -54,20 +56,53 @@ class MainActivity : ComponentActivity() {
                     progress = progress.value,
                     results = results,
                     error = errorMessage.value,
+                    allModels = allModels,
+                    selectedModels = selectedModels,
                     onEndpointChange = { endpoint.value = it },
                     onApiKeyChange = { apiKey.value = it },
                     onConcurrencyChange = { concurrency.value = it },
+                    onFetchModels = ::fetchModels,
+                    onToggleModel = ::toggleModel,
+                    onToggleAll = ::toggleAll,
                     onStart = ::startScan,
-                    onCancel = { job?.cancel(); running.value = false; progress.value = "已停止" },
+                    onCancel = { job?.cancel(); running.value = false; progress.value = AppStrings.get("done") },
                     onSelect = {},
                     onToggleLang = {
                         AppStrings.lang = if (AppStrings.lang == "zh") "en" else "zh"
                     },
                     onCheckUpdate = ::checkUpdate,
                     updateMessage = updateMessage.value,
+                    onDismissUpdate = { updateMessage.value = null },
                 )
             }
         }
+    }
+
+    private fun fetchModels() {
+        errorMessage.value = null
+        progress.value = AppStrings.get("fetching")
+        lifecycleScope.launch {
+            try {
+                val models = withContext(Dispatchers.IO) {
+                    com.modelspy.probe.ProbeEngine().listModels(endpoint.value, apiKey.value)
+                }
+                allModels.clear(); allModels.addAll(models)
+                selectedModels.clear(); selectedModels.addAll(models)
+                progress.value = "${AppStrings.get("found")} ${models.size} ${AppStrings.get("models")}"
+            } catch (e: Exception) {
+                errorMessage.value = e.message ?: e.toString()
+                progress.value = ""
+            }
+        }
+    }
+
+    private fun toggleModel(m: String) {
+        if (m in selectedModels) selectedModels.remove(m) else selectedModels.add(m)
+    }
+
+    private fun toggleAll() {
+        if (selectedModels.size == allModels.size) selectedModels.clear()
+        else { selectedModels.clear(); selectedModels.addAll(allModels) }
     }
 
     private fun checkUpdate() {
@@ -89,6 +124,8 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun startScan() {
+        val models = if (selectedModels.isEmpty()) allModels.toList() else selectedModels.toList()
+        if (models.isEmpty()) { errorMessage.value = AppStrings.get("need_select"); return }
         job?.cancel()
         results.clear()
         errorMessage.value = null
@@ -96,10 +133,7 @@ class MainActivity : ComponentActivity() {
         job = lifecycleScope.launch {
             try {
                 val r = ranker ?: throw RuntimeException("detector not loaded")
-                val models = withContext(Dispatchers.IO) {
-                    com.modelspy.probe.ProbeEngine().listModels(endpoint.value, apiKey.value)
-                }
-                progress.value = "Found ${models.size} models — numeric fingerprinting (3 samples each)"
+                progress.value = "${AppStrings.get("found")} ${models.size} ${AppStrings.get("models")}"
                 val sem = Semaphore(concurrency.value)
                 var done = 0
                 withContext(Dispatchers.Default) {
@@ -111,11 +145,11 @@ class MainActivity : ComponentActivity() {
                                 val res = if (texts.size >= 3) r.analyze(texts) else null
                                 done += 1
                                 withContext(Dispatchers.Main) {
-                                    progress.value = "progress $done/${models.size}"
+                                    progress.value = "${AppStrings.get("progress")} $done/${models.size}"
                                     results.add(
                                         ModelScanResult(
                                             modelParam = m,
-                                            detected = res?.model ?: "insufficient samples",
+                                            detected = res?.model ?: AppStrings.get("insufficient"),
                                             provider = "",
                                             tier = "",
                                             score = (res?.score ?: 0.0).toInt(),
@@ -133,7 +167,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }.awaitAll()
                 }
-                progress.value = "done: ${models.size} models"
+                results.sortByDescending { it.probability }
+                progress.value = "${AppStrings.get("done")}: ${models.size}"
             } catch (e: Exception) {
                 errorMessage.value = e.message ?: e.toString()
             } finally {
