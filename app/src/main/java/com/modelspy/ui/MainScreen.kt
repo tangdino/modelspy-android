@@ -16,7 +16,9 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
@@ -50,30 +52,62 @@ fun MainScreen(
     onStart: () -> Unit,
     onCancel: () -> Unit,
     onSelect: (ModelScanResult) -> Unit,
+    onToggleLang: () -> Unit,
+    onCheckUpdate: () -> Unit,
+    updateMessage: String?,
 ) {
     var showDetail by remember { mutableStateOf<ModelScanResult?>(null) }
+    var showAbout by remember { mutableStateOf(false) }
+    val langTick = remember { mutableStateOf(0) }
     showDetail?.let { r ->
         DetailDialog(r) { showDetail = null }
         return
     }
+    langTick.value  // recompose on language change
+    if (showAbout) {
+        AlertDialog(
+            onDismissRequest = { showAbout = false },
+            title = { Text(AppStrings.get("about_title")) },
+            text = { Text(AppStrings.get("about_body"), fontSize = 13.sp) },
+            confirmButton = { TextButton(onClick = { showAbout = false }) { Text(AppStrings.get("ok")) } }
+        )
+    }
+    updateMessage?.let { msg ->
+        AlertDialog(
+            onDismissRequest = { },
+            title = { Text(AppStrings.get("check_update")) },
+            text = { Text(msg, fontSize = 13.sp) },
+            confirmButton = { TextButton(onClick = { }) { Text(AppStrings.get("ok")) } }
+        )
+    }
+
     Scaffold(topBar = {
-        TopAppBar(title = { Text("API Model Spy") })
+        TopAppBar(
+            title = { Text(AppStrings.get("title")) },
+            actions = {
+                TextButton(onClick = { onToggleLang(); langTick.value++ }) {
+                    Text(if (AppStrings.lang == "zh") "EN" else "中")
+                }
+                TextButton(onClick = { showAbout = true }) { Text(AppStrings.get("about")) }
+                TextButton(onClick = onCheckUpdate) { Text(AppStrings.get("check_update")) }
+            }
+        )
     }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp).fillMaxSize()) {
             OutlinedTextField(value = endpoint, onValueChange = onEndpointChange,
-                label = { Text("Endpoint") }, modifier = Modifier.fillMaxWidth(), singleLine = true,
-                placeholder = { Text("https://host/v1") })
+                label = { Text(AppStrings.get("endpoint")) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
+                placeholder = { Text(AppStrings.get("endpoint_hint")) })
             OutlinedTextField(value = apiKey, onValueChange = onApiKeyChange,
-                label = { Text("API Key") }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), singleLine = true)
+                label = { Text(AppStrings.get("apikey")) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), singleLine = true)
             Row(Modifier.fillMaxWidth().padding(top = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-                Text("并发数: $concurrency")
-                Text("建议 8 以避开网关限流", fontSize = 12.sp)
+                Text("${AppStrings.get("concurrency")}: $concurrency")
+                Text(AppStrings.get("concurrency_hint"), fontSize = 12.sp)
             }
             Slider(value = concurrency.toFloat(), onValueChange = { onConcurrencyChange(it.toInt()) },
                 valueRange = 1f..24f, steps = 22, modifier = Modifier.fillMaxWidth())
             Row(Modifier.fillMaxWidth().padding(top = 8.dp)) {
-                Button(onClick = onStart, enabled = !running) { Text("开始全量扫描") }
-                if (running) Button(onClick = onCancel, modifier = Modifier.padding(start = 8.dp)) { Text("停止") }
+                Button(onClick = onStart, enabled = !running) { Text(AppStrings.get("start")) }
+                if (running) Button(onClick = onCancel, modifier = Modifier.padding(start = 8.dp)) { Text(AppStrings.get("stop")) }
             }
             if (running) {
                 CircularProgressIndicator(Modifier.padding(top = 12.dp))
@@ -95,12 +129,13 @@ fun ResultCard(r: ModelScanResult, onClick: () -> Unit) {
         colors = CardDefaults.cardColors()) {
         Column(Modifier.padding(12.dp)) {
             Text(r.modelParam, fontWeight = FontWeight.Bold)
-            Text("真实: ${r.detected}", fontSize = 14.sp, fontWeight = FontWeight.Bold,
-                color = MaterialTheme.colorScheme.primary)
-            if (r.probability > 0) Text("置信度: ${"%.2f".format(r.probability * 100)}%", fontSize = 12.sp)
-            if (r.top3.isNotEmpty()) Text("候选: ${r.top3.joinToString("  ") { "${it.first} ${"%.3f".format(it.second / 1000.0)}" }}",
+            Text("${AppStrings.get("real_model")}: ${r.detected}", fontSize = 14.sp,
+                fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+            if (r.probability > 0) Text("${AppStrings.get("confidence")}: ${"%.2f".format(r.probability * 100)}%",
+                fontSize = 12.sp)
+            if (r.top3.isNotEmpty()) Text("${AppStrings.get("candidates")}: ${r.top3.joinToString("  ") { "${it.first} ${"%.3f".format(it.second / 1000.0)}" }}",
                 fontSize = 11.sp, maxLines = 2)
-            if (r.errors > 0) Text("样本不足: 缺 ${r.errors}/3", fontSize = 11.sp,
+            if (r.errors > 0) Text("${AppStrings.get("insufficient")} ${r.errors}/3", fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.error)
         }
     }

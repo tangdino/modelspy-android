@@ -13,6 +13,7 @@ import com.modelspy.data.ModelScanResult
 import com.modelspy.fpd.FpdProbe
 import com.modelspy.fpd.FpdRanker
 import org.json.JSONObject
+import com.modelspy.ui.AppStrings
 import com.modelspy.ui.MainScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -33,6 +34,7 @@ class MainActivity : ComponentActivity() {
     private val running = mutableStateOf(false)
     private val progress = mutableStateOf("")
     private val errorMessage = mutableStateOf<String?>(null)
+    private val updateMessage = mutableStateOf<String?>(null)
     private val results = mutableStateListOf<ModelScanResult>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -58,7 +60,30 @@ class MainActivity : ComponentActivity() {
                     onStart = ::startScan,
                     onCancel = { job?.cancel(); running.value = false; progress.value = "已停止" },
                     onSelect = {},
+                    onToggleLang = {
+                        AppStrings.lang = if (AppStrings.lang == "zh") "en" else "zh"
+                    },
+                    onCheckUpdate = ::checkUpdate,
+                    updateMessage = updateMessage.value,
                 )
+            }
+        }
+    }
+
+    private fun checkUpdate() {
+        updateMessage.value = AppStrings.get("checking")
+        lifecycleScope.launch {
+            try {
+                val info = UpdateChecker.check()
+                updateMessage.value = when {
+                    info == null -> AppStrings.get("update_failed")
+                    UpdateChecker.isNewer(info.latestTag) ->
+                        AppStrings.get("update_found") + ": ${info.latestTag}\n${AppStrings.get("download")}: ${info.htmlUrl}"
+                    else -> AppStrings.get("up_to_date") + " (" + AppStrings.get("current_version") + " " +
+                        UpdateChecker.CURRENT_VERSION + ")"
+                }
+            } catch (e: Exception) {
+                updateMessage.value = AppStrings.get("update_failed") + ": ${e.message}"
             }
         }
     }
