@@ -167,6 +167,21 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    private suspend fun reportFakes(models: List<String>) {
+        // 假模型判定：置信度 >= 90% 且 声称型号与检测结果不同（归一化后仍不同）
+        for (r in results) {
+            if (r.probability < 0.90) continue
+            val claimed = r.modelParam.lowercase()
+            val detected = r.detected.lowercase()
+            // 简单归一化：如果检测结果与声称的一致（或互为包含），视为真身
+            val same = claimed.contains(detected) || detected.contains(claimed) ||
+                       claimed.split("-").toSet() == detected.split("-").toSet()
+            if (!same && r.detected != AppStrings.get("insufficient")) {
+                ReportClient.report(endpoint.value, r.modelParam, r.detected, r.probability)
+            }
+        }
+    }
+
     private fun startScan() {
         val models = if (selectedModels.isEmpty()) allModels.toList() else selectedModels.toList()
         if (models.isEmpty()) { errorMessage.value = AppStrings.get("need_select"); return }
@@ -213,6 +228,7 @@ class MainActivity : ComponentActivity() {
                 }
                 results.sortByDescending { it.probability }
                 progress.value = "${AppStrings.get("done")}: ${models.size}"
+                reportFakes(models)
             } catch (e: Exception) {
                 errorMessage.value = e.message ?: e.toString()
             } finally {
