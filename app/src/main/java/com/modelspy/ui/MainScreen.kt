@@ -175,8 +175,7 @@ fun MainScreen(
     }) { pad ->
         Column(Modifier.padding(pad).padding(16.dp).fillMaxSize()) {
             OutlinedTextField(value = endpoint, onValueChange = onEndpointChange,
-                label = { Text(AppStrings.get("endpoint")) }, modifier = Modifier.fillMaxWidth(), singleLine = true,
-                placeholder = { Text(AppStrings.get("endpoint_hint")) })
+                label = { Text(AppStrings.get("endpoint")) }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             OutlinedTextField(value = apiKey, onValueChange = onApiKeyChange,
                 label = { Text(AppStrings.get("apikey")) }, modifier = Modifier.fillMaxWidth().padding(top = 8.dp), singleLine = true,
                 trailingIcon = {
