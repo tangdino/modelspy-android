@@ -156,13 +156,8 @@ class MainActivity : ComponentActivity() {
         if (m in selectedModels) selectedModels.remove(m) else selectedModels.add(m)
     }
 
-    private fun saveConfig() {
-        val e = endpoint.value.trim()
-        val k = apiKey.value.trim()
-        if (e.isEmpty() || k.isEmpty()) {
-            errorMessage.value = AppStrings.get("need_endpoint_key")
-            return
-        }
+    private fun persistConfig(e: String, k: String): Boolean {
+        if (e.isEmpty() || k.isEmpty()) return false
         val updated = mutableListOf<SavedConfig>()
         var replaced = false
         for (c in savedConfigs) {
@@ -172,6 +167,16 @@ class MainActivity : ComponentActivity() {
         if (!replaced) updated.add(SavedConfig(e, k))
         savedConfigs.clear(); savedConfigs.addAll(updated)
         ConfigStore.save(this, savedConfigs.toList())
+        return true
+    }
+
+    private fun saveConfig() {
+        val e = endpoint.value.trim()
+        val k = apiKey.value.trim()
+        if (!persistConfig(e, k)) {
+            errorMessage.value = AppStrings.get("need_endpoint_key")
+            return
+        }
         progress.value = AppStrings.get("config_saved")
     }
 
@@ -241,6 +246,8 @@ class MainActivity : ComponentActivity() {
     private fun startScan() {
         val models = if (selectedModels.isEmpty()) allModels.toList() else selectedModels.toList()
         if (models.isEmpty()) { errorMessage.value = AppStrings.get("need_select"); return }
+        // 检测时自动保存已输入的地址和 key
+        persistConfig(endpoint.value.trim(), apiKey.value.trim())
         job?.cancel()
         results.clear()
         errorMessage.value = null
