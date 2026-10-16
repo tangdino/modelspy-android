@@ -3,6 +3,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
     <application
         android:label="ModelSpy"
+        android:icon="@mipmap/ic_launcher"
         android:theme="@style/Theme.ModelSpy"
         android:usesCleartextTraffic="true">
         <activity

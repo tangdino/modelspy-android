@@ -4,8 +4,18 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.foundation.layout.padding
+import androidx.compose.ui.unit.dp
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.lifecycleScope
@@ -36,19 +46,19 @@ class MainActivity : ComponentActivity() {
     private val errorMessage = mutableStateOf<String?>(null)
     private val updateMessage = mutableStateOf<String?>(null)
     private val results = mutableStateListOf<ModelScanResult>()
+    private val loading = mutableStateOf(true)
     private val allModels = mutableStateListOf<String>()
     private val selectedModels = mutableStateListOf<String>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        try {
-            val json = assets.open("detector.json").bufferedReader().use { it.readText() }
-            ranker = FpdRanker(JSONObject(json))
-        } catch (e: Exception) { errorMessage.value = "detector load failed: ${e.message}" }
         setContent {
             MaterialTheme(colorScheme = darkColorScheme()) {
-                MainScreen(
+                if (loading.value) {
+                    LoadingScreen()
+                } else {
+                    MainScreen(
                     endpoint = endpoint.value,
                     apiKey = apiKey.value,
                     concurrency = concurrency.value,
@@ -73,7 +83,25 @@ class MainActivity : ComponentActivity() {
                     onCheckUpdate = ::checkUpdate,
                     updateMessage = updateMessage.value,
                     onDismissUpdate = { updateMessage.value = null },
-                )
+                    )
+                }
+            }
+        }
+        loadDetector()
+    }
+
+    private fun loadDetector() {
+        lifecycleScope.launch {
+            try {
+                val r = withContext(Dispatchers.IO) {
+                    val json = assets.open("detector.json").bufferedReader().use { it.readText() }
+                    FpdRanker(JSONObject(json))
+                }
+                ranker = r
+            } catch (e: Exception) {
+                errorMessage.value = "detector load failed: ${e.message}"
+            } finally {
+                loading.value = false
             }
         }
     }
@@ -175,5 +203,14 @@ class MainActivity : ComponentActivity() {
                 running.value = false
             }
         }
+    }
+}
+
+
+@Composable
+fun LoadingScreen() {
+    Column(Modifier.fillMaxSize(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        CircularProgressIndicator()
+        Text(AppStrings.get("loading"), Modifier.padding(top = 16.dp))
     }
 }

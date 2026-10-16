@@ -10,6 +10,7 @@ object AppStrings {
 
     private val zh = mapOf(
         "title" to "API Model Spy",
+        "loading" to "正在加载检测器...",
         "endpoint" to "接口地址",
         "endpoint_hint" to "https://your-relay/v1",
         "apikey" to "API Key",
@@ -62,6 +63,7 @@ object AppStrings {
 
     private val en = mapOf(
         "title" to "API Model Spy",
+        "loading" to "Loading detector...",
         "endpoint" to "Endpoint",
         "endpoint_hint" to "https://your-relay/v1",
         "apikey" to "API Key",
