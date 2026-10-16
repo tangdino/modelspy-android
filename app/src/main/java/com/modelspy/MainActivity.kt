@@ -55,10 +55,12 @@ class MainActivity : ComponentActivity() {
     private val selectedModels = mutableStateListOf<String>()
     private val blacklist = mutableStateListOf<BlacklistEntry>()
     private val blacklistLoading = mutableStateOf(false)
+    private val savedConfigs = mutableStateListOf<SavedConfig>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        savedConfigs.clear(); savedConfigs.addAll(ConfigStore.load(this))
         setContent {
             val dark = when (themeMode.value) {
                 "light" -> false
@@ -98,6 +100,10 @@ class MainActivity : ComponentActivity() {
                     blacklist = blacklist,
                     blacklistLoading = blacklistLoading.value,
                     onOpenBlacklist = ::loadBlacklist,
+                    savedConfigs = savedConfigs,
+                    onSaveConfig = ::saveConfig,
+                    onSelectConfig = ::selectConfig,
+                    onDeleteConfig = ::deleteConfig,
                     onToggleTheme = {
                         themeMode.value = when (themeMode.value) {
                             "system" -> "light"
@@ -148,6 +154,35 @@ class MainActivity : ComponentActivity() {
 
     private fun toggleModel(m: String) {
         if (m in selectedModels) selectedModels.remove(m) else selectedModels.add(m)
+    }
+
+    private fun saveConfig() {
+        val e = endpoint.value.trim()
+        val k = apiKey.value.trim()
+        if (e.isEmpty() || k.isEmpty()) {
+            errorMessage.value = AppStrings.get("need_endpoint_key")
+            return
+        }
+        val updated = mutableListOf<SavedConfig>()
+        var replaced = false
+        for (c in savedConfigs) {
+            if (c.endpoint == e) { updated.add(SavedConfig(e, k)); replaced = true }
+            else updated.add(c)
+        }
+        if (!replaced) updated.add(SavedConfig(e, k))
+        savedConfigs.clear(); savedConfigs.addAll(updated)
+        ConfigStore.save(this, savedConfigs.toList())
+        progress.value = AppStrings.get("config_saved")
+    }
+
+    private fun selectConfig(c: SavedConfig) {
+        endpoint.value = c.endpoint
+        apiKey.value = c.key
+    }
+
+    private fun deleteConfig(c: SavedConfig) {
+        savedConfigs.removeAll { it.endpoint == c.endpoint }
+        ConfigStore.save(this, savedConfigs.toList())
     }
 
     private fun toggleAll() {
