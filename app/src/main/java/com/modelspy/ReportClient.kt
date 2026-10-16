@@ -11,7 +11,7 @@ import java.util.concurrent.TimeUnit
 
 /** 把检测到的"假模型中转站"上报到 ModelSpy 后台，用于维护黑名单。 */
 object ReportClient {
-    private const val REPORT_URL = "http://103.251.167.63:8890/report"
+    private const val REPORT_URL = "https://modelspy-report.tangdino98.workers.dev/report"
     private val client = OkHttpClient.Builder()
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)

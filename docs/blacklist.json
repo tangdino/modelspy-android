@@ -12,18 +12,6 @@
       "reports": 1,
       "first_seen": "2026-10-16T10:14:43Z",
       "last_seen": "2026-10-16T10:14:43Z"
-    },
-    {
-      "endpoint": "https://test-fake-relay.example/v1",
-      "detected": "muse-spark-1.2",
-      "claims": [
-        "gpt-5.5"
-      ],
-      "confidence": 0.98,
-      "model_param": "",
-      "reports": 1,
-      "first_seen": "2026-10-16T10:34:22.161Z",
-      "last_seen": "2026-10-16T10:34:22.161Z"
     }
   ]
 }
