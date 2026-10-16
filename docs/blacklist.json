@@ -1,0 +1,17 @@
+{
+  "updated": "2026-10-16T10:14:43Z",
+  "entries": [
+    {
+      "endpoint": "https://primerelay.online/v1",
+      "detected": "muse-spark-1.2",
+      "claims": [
+        "gpt-5.5"
+      ],
+      "confidence": 0.996,
+      "model_param": "",
+      "reports": 1,
+      "first_seen": "2026-10-16T10:14:43Z",
+      "last_seen": "2026-10-16T10:14:43Z"
+    }
+  ]
+}
