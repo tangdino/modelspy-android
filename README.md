@@ -1,5 +1,7 @@
 # ModelSpy
 
+English | [简体中文](./README.zh-CN.md)
+
 Android app that reveals **which LLM is actually running** behind any OpenAI-compatible API endpoint.
 
 Many third-party LLM relays sell "GPT-5.5", "Claude Opus 5.5", "Grok 4.6" etc. while silently serving a
@@ -29,7 +31,7 @@ Three valid samples per model are required before a confidence is reported.
 
 ## Usage
 
-1. Enter the endpoint (e.g. `https://host/v1`) and your API key.
+1. Enter the endpoint (e.g. `https://host/v1`) and your API key (both fields start empty).
 2. Adjust concurrency — **keep it low (4–8)**; relays rate-limit aggressively (HTTP 429).
 3. Tap *Start* — the app fetches `/v1/models` and fingerprints every model.
 4. Results show the real model plus a confidence percentage and top-5 candidates.

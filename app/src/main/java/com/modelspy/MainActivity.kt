@@ -27,7 +27,7 @@ class MainActivity : ComponentActivity() {
     private var ranker: FpdRanker? = null
     private var job: Job? = null
 
-    private val endpoint = mutableStateOf("https://primerelay.online/v1")
+    private val endpoint = mutableStateOf("")
     private val apiKey = mutableStateOf("")
     private val concurrency = mutableStateOf(8)
     private val running = mutableStateOf(false)
