@@ -1,5 +1,6 @@
 package com.modelspy
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaType
@@ -33,6 +34,8 @@ object ReportClient {
                 client.newCall(req).execute().use { resp ->
                     resp.isSuccessful
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 false
             }

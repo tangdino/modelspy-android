@@ -1,6 +1,9 @@
 package com.modelspy.fpd
 
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.sync.Semaphore
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.OkHttpClient
@@ -64,8 +67,12 @@ class FpdProbe {
             repeat(6) { attempt ->
                 try {
                     val count = n + listOf(-8, -4, 0, 4, 8, 12).random()
-                    val text = ask(baseUrl, apiKey, model, FpdChallenges.prompt(i, count), 4000)
+                    val prompt = FpdChallenges.prompt(i, count)
+                    // 挂起式执行网络 IO，避免阻塞 Default 线程池
+                    val text = withContext(Dispatchers.IO) { ask(baseUrl, apiKey, model, prompt, 4000) }
                     if (FpdCore.parseNumbers(text).size >= 165) { out.add(text); got = true; return@repeat }
+                } catch (e: CancellationException) {
+                    throw e   // 协程取消必须向上传播，不能吞掉
                 } catch (e: Exception) {
                     delay(((1L shl attempt) * 2000L).coerceAtMost(30000L) + Random.nextLong(0, 2000))
                 }

@@ -28,6 +28,7 @@ import org.json.JSONObject
 import com.modelspy.ui.AppStrings
 import com.modelspy.ui.MainScreen
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -215,7 +216,7 @@ class MainActivity : ComponentActivity() {
                 progress.value = "${AppStrings.get("found")} ${models.size} ${AppStrings.get("models")}"
                 val sem = Semaphore(concurrency.value)
                 var done = 0
-                withContext(Dispatchers.Default) {
+                withContext(Dispatchers.IO) {
                     models.map { m ->
                         async {
                             sem.acquire()
@@ -249,6 +250,8 @@ class MainActivity : ComponentActivity() {
                 results.sortByDescending { it.probability }
                 progress.value = "${AppStrings.get("done")}: ${models.size}"
                 reportFakes(models)
+            } catch (e: CancellationException) {
+                throw e   // 正常取消，不当作错误
             } catch (e: Exception) {
                 errorMessage.value = e.message ?: e.toString()
             } finally {
