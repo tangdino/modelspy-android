@@ -194,7 +194,7 @@ fun MainScreen(
             DropdownMenu(expanded = showConfigMenu, onDismissRequest = { showConfigMenu = false }) {
                 if (savedConfigs.isEmpty()) {
                     androidx.compose.material3.DropdownMenuItem(
-                        text = { Text(AppStrings.get("blacklist_empty"), fontSize = 13.sp) },
+                        text = { Text(AppStrings.get("configs_empty"), fontSize = 13.sp) },
                         onClick = { showConfigMenu = false }
                     )
                 } else {
