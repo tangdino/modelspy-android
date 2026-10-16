@@ -20,6 +20,6 @@ data class ModelScanResult(
     val identity: String,
     val errors: Int,
     val probes: List<ProbeResult>,
-    val top3: List<Pair<String, Int>>,
+    val top3: List<Pair<String, Double>>,
     val probability: Double = 0.0,
 )

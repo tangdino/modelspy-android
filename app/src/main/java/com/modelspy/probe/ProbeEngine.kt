@@ -156,7 +156,7 @@ class ProbeEngine {
             identity = probes.firstOrNull { it.name == "self_identity" }?.response?.replace("\n", " ") ?: "",
             errors = probes.count { it.error != null },
             probes = probes,
-            top3 = scored.take(3).map { it.first.name to it.second },
+            top3 = scored.take(3).map { it.first.name to it.second.toDouble() },
         )
     }
 }

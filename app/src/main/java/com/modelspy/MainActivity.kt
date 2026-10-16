@@ -237,7 +237,7 @@ class MainActivity : ComponentActivity() {
                                             identity = "",
                                             errors = 3 - texts.size,
                                             probes = emptyList(),
-                                            top3 = res?.top?.map { it.first to (it.second * 1000).toInt() } ?: emptyList(),
+                                            top3 = res?.top ?: emptyList(),
                                             probability = res?.probability ?: 0.0,
                                         )
                                     )

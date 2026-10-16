@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -97,7 +98,7 @@ fun MainScreen(
                     blacklistLoading -> Text(AppStrings.get("blacklist_loading"), fontSize = 13.sp)
                     blacklist.isEmpty() -> Text(AppStrings.get("blacklist_empty"), fontSize = 13.sp)
                     else -> androidx.compose.foundation.lazy.LazyColumn(
-                        modifier = Modifier.fillMaxWidth().let { it },
+                        modifier = Modifier.fillMaxWidth().heightIn(max = 400.dp),
                         verticalArrangement = Arrangement.spacedBy(10.dp)
                     ) {
                         items(blacklist) { e ->
@@ -208,7 +209,7 @@ fun ResultCard(r: ModelScanResult, onClick: () -> Unit) {
                 fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
             if (r.probability > 0) Text("${AppStrings.get("confidence")}: ${"%.2f".format(r.probability * 100)}%",
                 fontSize = 12.sp)
-            if (r.top3.isNotEmpty()) Text("${AppStrings.get("candidates")}: ${r.top3.joinToString("  ") { "${it.first} ${"%.3f".format(it.second / 1000.0)}" }}",
+            if (r.top3.isNotEmpty()) Text("${AppStrings.get("candidates")}: ${r.top3.joinToString("  ") { "${it.first} ${"%.3f".format(it.second)}" }}",
                 fontSize = 11.sp, maxLines = 2)
             if (r.errors > 0) Text("${AppStrings.get("insufficient")} ${r.errors}/3", fontSize = 11.sp,
                 color = MaterialTheme.colorScheme.error)
@@ -222,13 +223,21 @@ fun DetailDialog(r: ModelScanResult, onDismiss: () -> Unit) {
         Card(Modifier.fillMaxWidth().padding(8.dp)) {
             Column(Modifier.padding(16.dp)) {
                 Text("${r.modelParam} → ${r.detected}", fontWeight = FontWeight.Bold, fontSize = 18.sp)
-                Text("${AppStrings.get("detail_provider")}: ${r.provider} · " +
-                        "${AppStrings.get("detail_tier")}: ${r.tier} · " +
-                        "${AppStrings.get("detail_score")}: ${r.score}", fontSize = 13.sp)
-                LazyColumn(Modifier.fillMaxWidth()) {
-                    items(r.probes) { p -> ProbeRow(p) }
+                if (r.probability > 0) {
+                    Text("${AppStrings.get("confidence")}: ${"%.2f".format(r.probability * 100)}%",
+                        fontSize = 14.sp, color = MaterialTheme.colorScheme.primary)
                 }
-                TextButton(onClick = onDismiss, Modifier.fillMaxWidth()) { Text(AppStrings.get("ok")) }
+                if (r.top3.isNotEmpty()) {
+                    Text(AppStrings.get("candidates"), fontWeight = FontWeight.Bold,
+                        fontSize = 13.sp, modifier = Modifier.padding(top = 10.dp))
+                    r.top3.forEachIndexed { i, (model, prob) ->
+                        Text("#${i + 1}  ${model}  ${"%.3f".format(prob)}",
+                            fontSize = 13.sp, fontFamily = FontFamily.Monospace)
+                    }
+                }
+                TextButton(onClick = onDismiss, Modifier.fillMaxWidth().padding(top = 8.dp)) {
+                    Text(AppStrings.get("ok"))
+                }
             }
         }
     }
