@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.modelspy.data.ModelScanResult
 import com.modelspy.data.ProbeResult
+import com.modelspy.BlacklistEntry
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -66,9 +67,13 @@ fun MainScreen(
     onDismissUpdate: () -> Unit,
     themeMode: String,
     onToggleTheme: () -> Unit,
+    blacklist: List<BlacklistEntry>,
+    blacklistLoading: Boolean,
+    onOpenBlacklist: () -> Unit,
 ) {
     var showDetail by remember { mutableStateOf<ModelScanResult?>(null) }
     var showAbout by remember { mutableStateOf(false) }
+    var showBlacklist by remember { mutableStateOf(false) }
 
     showDetail?.let { r ->
         DetailDialog(r) { showDetail = null }
@@ -81,6 +86,27 @@ fun MainScreen(
             title = { Text(AppStrings.get("about_title")) },
             text = { Text(AppStrings.get("about_body"), fontSize = 13.sp) },
             confirmButton = { TextButton(onClick = { showAbout = false }) { Text(AppStrings.get("ok")) } }
+        )
+    }
+    if (showBlacklist) {
+        AlertDialog(
+            onDismissRequest = { showBlacklist = false },
+            title = { Text(AppStrings.get("blacklist"), fontWeight = FontWeight.Bold) },
+            text = {
+                when {
+                    blacklistLoading -> Text(AppStrings.get("blacklist_loading"), fontSize = 13.sp)
+                    blacklist.isEmpty() -> Text(AppStrings.get("blacklist_empty"), fontSize = 13.sp)
+                    else -> androidx.compose.foundation.lazy.LazyColumn(
+                        modifier = Modifier.fillMaxWidth().let { it },
+                        verticalArrangement = Arrangement.spacedBy(10.dp)
+                    ) {
+                        items(blacklist) { e ->
+                            BlacklistCard(e)
+                        }
+                    }
+                }
+            },
+            confirmButton = { TextButton(onClick = { showBlacklist = false }) { Text(AppStrings.get("ok")) } }
         )
     }
     updateMessage?.let { msg ->
@@ -96,6 +122,9 @@ fun MainScreen(
         TopAppBar(
             title = { Text(AppStrings.get("title")) },
             actions = {
+                TextButton(onClick = { showBlacklist = true; onOpenBlacklist() }) {
+                    Text(AppStrings.get("blacklist"))
+                }
                 TextButton(onClick = onToggleTheme) {
                     Text(when (themeMode) {
                         "light" -> AppStrings.get("theme_light")
@@ -216,6 +245,34 @@ fun ProbeRow(p: ProbeResult) {
                         "${AppStrings.get("thinking")} ${p.reasoningTokens ?: 0} ${AppStrings.get("tokens")}", fontSize = 11.sp)
                 Text((p.response ?: "").take(500), fontSize = 11.sp, fontFamily = FontFamily.Monospace)
             }
+        }
+    }
+}
+
+@Composable
+fun BlacklistCard(e: BlacklistEntry) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.15f)
+        ),
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.35f)
+        )
+    ) {
+        Column(Modifier.padding(14.dp)) {
+            Text(e.endpoint, fontSize = 14.sp, fontWeight = FontWeight.Bold,
+                color = MaterialTheme.colorScheme.primary, fontFamily = FontFamily.Monospace)
+            Text("${AppStrings.get("real_model")}: ${e.detected}",
+                fontSize = 13.sp, color = MaterialTheme.colorScheme.error)
+            if (e.claims.isNotEmpty()) {
+                Text("${AppStrings.get("candidates")}: ${e.claims.joinToString(", ")}",
+                    fontSize = 11.sp, maxLines = 2)
+            }
+            Text("${AppStrings.get("confidence")}: ${"%.1f".format(e.confidence * 100)}%  ·  " +
+                    "${e.reports} ${AppStrings.get("reports")}",
+                fontSize = 11.sp)
         }
     }
 }

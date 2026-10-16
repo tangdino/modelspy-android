@@ -52,6 +52,8 @@ class MainActivity : ComponentActivity() {
     private val themeMode = mutableStateOf("system")  // system / light / dark
     private val allModels = mutableStateListOf<String>()
     private val selectedModels = mutableStateListOf<String>()
+    private val blacklist = mutableStateListOf<BlacklistEntry>()
+    private val blacklistLoading = mutableStateOf(false)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -92,6 +94,9 @@ class MainActivity : ComponentActivity() {
                     updateMessage = updateMessage.value,
                     onDismissUpdate = { updateMessage.value = null },
                     themeMode = themeMode.value,
+                    blacklist = blacklist,
+                    blacklistLoading = blacklistLoading.value,
+                    onOpenBlacklist = ::loadBlacklist,
                     onToggleTheme = {
                         themeMode.value = when (themeMode.value) {
                             "system" -> "light"
@@ -147,6 +152,21 @@ class MainActivity : ComponentActivity() {
     private fun toggleAll() {
         if (selectedModels.size == allModels.size) selectedModels.clear()
         else { selectedModels.clear(); selectedModels.addAll(allModels) }
+    }
+
+    private fun loadBlacklist() {
+        if (blacklistLoading.value) return
+        blacklistLoading.value = true
+        lifecycleScope.launch {
+            try {
+                val list = BlacklistClient.fetch()
+                blacklist.clear(); blacklist.addAll(list)
+            } catch (e: Exception) {
+                errorMessage.value = AppStrings.get("blacklist_failed") + ": ${e.message}"
+            } finally {
+                blacklistLoading.value = false
+            }
+        }
     }
 
     private fun checkUpdate() {
