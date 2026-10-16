@@ -12,12 +12,18 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -75,6 +81,7 @@ fun MainScreen(
     var showDetail by remember { mutableStateOf<ModelScanResult?>(null) }
     var showAbout by remember { mutableStateOf(false) }
     var showBlacklist by remember { mutableStateOf(false) }
+    var showMenu by remember { mutableStateOf(false) }
 
     showDetail?.let { r ->
         DetailDialog(r) { showDetail = null }
@@ -123,21 +130,36 @@ fun MainScreen(
         TopAppBar(
             title = { Text(AppStrings.get("title")) },
             actions = {
-                TextButton(onClick = { showBlacklist = true; onOpenBlacklist() }) {
-                    Text(AppStrings.get("blacklist"))
-                }
-                TextButton(onClick = onToggleTheme) {
-                    Text(when (themeMode) {
-                        "light" -> AppStrings.get("theme_light")
-                        "dark" -> AppStrings.get("theme_dark")
-                        else -> AppStrings.get("theme_system")
-                    })
-                }
+                // 语言切换：短文本
                 TextButton(onClick = onToggleLang) {
                     Text(if (AppStrings.lang == "zh") "EN" else "中")
                 }
-                TextButton(onClick = { showAbout = true }) { Text(AppStrings.get("about")) }
-                TextButton(onClick = onCheckUpdate) { Text(AppStrings.get("check_update")) }
+                // 主题切换：短文本（用图标符号缩短）
+                TextButton(onClick = onToggleTheme) {
+                    Text(when (themeMode) {
+                        "light" -> "☀"
+                        "dark" -> "☾"
+                        else -> "◐"
+                    })
+                }
+                // 更多菜单：收纳黑名单/关于/更新
+                IconButton(onClick = { showMenu = true }) {
+                    Icon(Icons.Filled.MoreVert, contentDescription = "menu")
+                }
+                DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
+                    DropdownMenuItem(
+                        text = { Text(AppStrings.get("blacklist")) },
+                        onClick = { showMenu = false; showBlacklist = true; onOpenBlacklist() }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(AppStrings.get("about")) },
+                        onClick = { showMenu = false; showAbout = true }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(AppStrings.get("check_update")) },
+                        onClick = { showMenu = false; onCheckUpdate() }
+                    )
+                }
             }
         )
     }) { pad ->

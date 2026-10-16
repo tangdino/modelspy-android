@@ -32,7 +32,7 @@ object UpdateChecker {
                 for (i in 0 until assets.length()) {
                     val a = assets.optJSONObject(i) ?: continue
                     if (a.optString("name", "").endsWith(".apk")) {
-                        apk = a.optString("browser_download_url", null); break
+                        apk = a.optString("browser_download_url").takeIf { it.isNotEmpty() }; break
                     }
                 }
             }
