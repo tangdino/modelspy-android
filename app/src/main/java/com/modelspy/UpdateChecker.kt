@@ -40,9 +40,17 @@ object UpdateChecker {
         }
     }
 
-    fun isNewer(latest: String): Boolean {
-        val cur = CURRENT_VERSION.trimStart('v').toDoubleOrNull() ?: 0.0
-        val new = latest.trimStart('v').toDoubleOrNull() ?: 0.0
-        return new > cur
+    /** Semantic-version comparison; supports 1.0, 1.0.1, 1.2.3, optional 'v' prefix. */
+    fun compareVersions(a: String, b: String): Int {
+        val pa = a.trimStart('v').split('.').map { it.toIntOrNull() ?: 0 }
+        val pb = b.trimStart('v').split('.').map { it.toIntOrNull() ?: 0 }
+        for (i in 0 until maxOf(pa.size, pb.size)) {
+            val x = pa.getOrElse(i) { 0 }
+            val y = pb.getOrElse(i) { 0 }
+            if (x != y) return if (x > y) 1 else -1
+        }
+        return 0
     }
+
+    fun isNewer(latest: String): Boolean = compareVersions(latest, CURRENT_VERSION) > 0
 }
