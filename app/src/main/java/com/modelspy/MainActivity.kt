@@ -11,6 +11,8 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.lightColorScheme
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,6 +49,7 @@ class MainActivity : ComponentActivity() {
     private val updateMessage = mutableStateOf<String?>(null)
     private val results = mutableStateListOf<ModelScanResult>()
     private val loading = mutableStateOf(true)
+    private val themeMode = mutableStateOf("system")  // system / light / dark
     private val allModels = mutableStateListOf<String>()
     private val selectedModels = mutableStateListOf<String>()
 
@@ -54,7 +57,12 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            MaterialTheme(colorScheme = darkColorScheme()) {
+            val dark = when (themeMode.value) {
+                "light" -> false
+                "dark" -> true
+                else -> isSystemInDarkTheme()
+            }
+            MaterialTheme(colorScheme = if (dark) darkColorScheme() else lightColorScheme()) {
                 if (loading.value) {
                     LoadingScreen()
                 } else {
@@ -83,6 +91,14 @@ class MainActivity : ComponentActivity() {
                     onCheckUpdate = ::checkUpdate,
                     updateMessage = updateMessage.value,
                     onDismissUpdate = { updateMessage.value = null },
+                    themeMode = themeMode.value,
+                    onToggleTheme = {
+                        themeMode.value = when (themeMode.value) {
+                            "system" -> "light"
+                            "light" -> "dark"
+                            else -> "system"
+                        }
+                    },
                     )
                 }
             }

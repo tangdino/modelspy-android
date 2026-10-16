@@ -64,6 +64,8 @@ fun MainScreen(
     onCheckUpdate: () -> Unit,
     updateMessage: String?,
     onDismissUpdate: () -> Unit,
+    themeMode: String,
+    onToggleTheme: () -> Unit,
 ) {
     var showDetail by remember { mutableStateOf<ModelScanResult?>(null) }
     var showAbout by remember { mutableStateOf(false) }
@@ -94,6 +96,13 @@ fun MainScreen(
         TopAppBar(
             title = { Text(AppStrings.get("title")) },
             actions = {
+                TextButton(onClick = onToggleTheme) {
+                    Text(when (themeMode) {
+                        "light" -> AppStrings.get("theme_light")
+                        "dark" -> AppStrings.get("theme_dark")
+                        else -> AppStrings.get("theme_system")
+                    })
+                }
                 TextButton(onClick = onToggleLang) {
                     Text(if (AppStrings.lang == "zh") "EN" else "中")
                 }
