@@ -281,8 +281,14 @@ fun ResultCard(r: ModelScanResult, onClick: () -> Unit) {
                 fontSize = 12.sp)
             if (r.top3.isNotEmpty()) Text("${AppStrings.get("candidates")}: ${r.top3.joinToString("  ") { "${it.first} ${"%.3f".format(it.second)}" }}",
                 fontSize = 11.sp, maxLines = 2)
-            if (r.errors > 0) Text("${AppStrings.get("insufficient")} ${r.errors}/3", fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.error)
+            if (r.errors > 0) {
+                Text("${AppStrings.get("insufficient")} ${r.errors}/3", fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.error)
+                if (r.errorDetail.isNotBlank()) {
+                    Text("${AppStrings.get("reason")}: ${r.errorDetail}", fontSize = 10.sp,
+                        color = MaterialTheme.colorScheme.error.copy(alpha = 0.75f), maxLines = 2)
+                }
+            }
         }
     }
 }

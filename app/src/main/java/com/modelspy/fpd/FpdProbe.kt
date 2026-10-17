@@ -31,6 +31,11 @@ object FpdChallenges {
 }
 
 class FpdProbe {
+    companion object {
+        const val MAX_TOKENS = 16000   // 推理模型会先消耗 reasoning tokens，留足输出空间
+        const val MIN_NUMBERS = 165    // analyze() 要求每份至少这么多有效数字
+    }
+
     private val client = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
         .readTimeout(300, TimeUnit.SECONDS)
@@ -60,25 +65,37 @@ class FpdProbe {
         }
     }
 
+    var lastError: String? = null
+        private set
+
     suspend fun collect(baseUrl: String, apiKey: String, model: String, samples: Int = 3, n: Int = 300): List<String> {
         val out = mutableListOf<String>()
+        lastError = null
         for (i in 0 until samples) {
-            var got = false
-            repeat(6) { attempt ->
+            repeat(8) { attempt ->
                 try {
                     val count = n + listOf(-8, -4, 0, 4, 8, 12).random()
                     val prompt = FpdChallenges.prompt(i, count)
                     // 挂起式执行网络 IO，避免阻塞 Default 线程池
-                    val text = withContext(Dispatchers.IO) { ask(baseUrl, apiKey, model, prompt, 4000) }
-                    if (FpdCore.parseNumbers(text).size >= 165) { out.add(text); got = true; return@repeat }
+                    val text = withContext(Dispatchers.IO) { ask(baseUrl, apiKey, model, prompt, MAX_TOKENS) }
+                    val nums = FpdCore.parseNumbers(text)
+                    if (nums.size >= MIN_NUMBERS) {
+                        out.add(text)
+                        lastError = null
+                        return@repeat
+                    }
+                    lastError = "解析到 ${nums.size} 个数字（需 \u2265 $MIN_NUMBERS）"
                 } catch (e: CancellationException) {
                     throw e   // 协程取消必须向上传播，不能吞掉
                 } catch (e: Exception) {
-                    delay(((1L shl attempt) * 2000L).coerceAtMost(30000L) + Random.nextLong(0, 2000))
+                    lastError = e.message ?: e.toString()
+                }
+                if (attempt < 7) {
+                    delay(((1L shl attempt) * 1500L).coerceAtMost(20000L) + Random.nextLong(0, 1500))
                 }
             }
-            if (!got) break
-            delay(500)
+            // 即使这一份失败也继续尝试下一份，提高最终凑齐 3 份的概率
+            delay(400)
         }
         return out
     }

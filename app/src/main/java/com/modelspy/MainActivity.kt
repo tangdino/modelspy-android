@@ -264,6 +264,7 @@ class MainActivity : ComponentActivity() {
                             sem.acquire()
                             try {
                                 val texts = fpdProbe.collect(endpoint.value, apiKey.value, m, 3)
+                                val failReason = if (texts.size < 3) (fpdProbe.lastError ?: "") else ""
                                 val res = if (texts.size >= 3) r.analyze(texts) else null
                                 done += 1
                                 withContext(Dispatchers.Main) {
@@ -279,6 +280,7 @@ class MainActivity : ComponentActivity() {
                                             avgLatency = null,
                                             identity = "",
                                             errors = 3 - texts.size,
+                                            errorDetail = failReason,
                                             probes = emptyList(),
                                             top3 = res?.top ?: emptyList(),
                                             probability = res?.probability ?: 0.0,
