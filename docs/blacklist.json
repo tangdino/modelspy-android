@@ -1,5 +1,5 @@
 {
-  "updated": "2026-10-16T12:53:14.783Z",
+  "updated": "2026-11-24T10:58:33.305Z",
   "entries": [
     {
       "endpoint": "https://primerelay.online/v1",
@@ -12,6 +12,16 @@
       "reports": 1,
       "first_seen": "2026-10-16T10:14:43Z",
       "last_seen": "2026-10-16T10:14:43Z"
+    },
+    {
+      "endpoint": "https://x/v1",
+      "detected": "m",
+      "claims": [],
+      "confidence": 0.9,
+      "model_param": "",
+      "reports": 1,
+      "first_seen": "2026-11-24T10:58:33.305Z",
+      "last_seen": "2026-11-24T10:58:33.305Z"
     }
   ]
 }
